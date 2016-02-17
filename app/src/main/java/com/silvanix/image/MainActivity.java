@@ -16,33 +16,73 @@ import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     DatabaseHelper myDb;
     ImageView iv;
     Button b;
+    static final String LOG = "LOG-INFO-MainActivity";
+
+
+    private ListView listView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         myDb = new DatabaseHelper(this);
-        b = (Button)findViewById(R.id.btnSelectPhoto);
-        iv = (ImageView)findViewById(R.id.ivImage);
+        b = (Button) findViewById(R.id.btnSelectPhoto);
+        listView = (ListView) findViewById(R.id.listViewImage);
+
+        //iv = (ImageView) findViewById(R.id.ivImage);
+
+        /*int widht = 128;
+        int height = 128;
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(widht, height);
+
+        iv.setLayoutParams(params);*/
+
+        showListAllImage();
 
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 selectImage();
+
             }
         });
+
+     }
+
+    private void showListAllImage() {
+        List<byte[]> allImage = myDb.getAllImage();
+        Log.i(LOG, "view bos");
+        System.out.println(allImage.size());
+
+        List<Gambar> listGambar = new ArrayList<>();
+        for (byte[] bytes : allImage) {
+            Gambar gambar = new Gambar();
+            gambar.set_image(bytes);
+
+            listGambar.add(gambar);
+        }
+        ImageAdapter adapter = new ImageAdapter(this, R.layout.list_image, listGambar);
+        listView.setAdapter(adapter);
+
+//        iv.setImageBitmap(BitmapFactory.decodeByteArray(allImage.get(1), 0, allImage.get(1).length));
+
     }
 
 //    @Override
@@ -61,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
                 if (options[which].equals("Take Photo")) {
                     Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                    File f = new File(android.os.Environment.getExternalStorageDirectory(), "temp.jpg");
+                    File f = new File(Environment.getExternalStorageDirectory(), "temp.jpg");
                     intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
                     startActivityForResult(intent, 1);
                 } else if (options[which].equals("Choose from Gallery")) {
@@ -79,11 +119,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(resultCode == RESULT_OK) {
-            if(requestCode == 1) {
+        if (resultCode == RESULT_OK) {
+            if (requestCode == 1) {
                 File f = new File(Environment.getExternalStorageDirectory().toString());
-                for(File temp:f.listFiles()) {
-                    if(temp.getName().equals("temp.jpg")){
+                for (File temp : f.listFiles()) {
+                    if (temp.getName().equals("temp.jpg")) {
                         f = temp;
                         break;
                     }
@@ -95,11 +135,13 @@ public class MainActivity extends AppCompatActivity {
 
                     bitmap = BitmapFactory.decodeFile(f.getAbsolutePath(), bo);
 
-                    iv.setImageBitmap(bitmap);
+                    //iv.setImageBitmap(bitmap);
 
                     myDb.insertBitmap(bitmap);
 
-                    String path = android.os.Environment.getExternalStorageDirectory() + File.separator + " Phoenix" + File.separator + "default";
+                    showListAllImage();
+
+                    String path = Environment.getExternalStorageDirectory() + File.separator + " Phoenix" + File.separator + "default";
                     f.delete();
 
                     OutputStream outFile = null;
@@ -119,13 +161,11 @@ public class MainActivity extends AppCompatActivity {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            }
-            else if(requestCode == 2)
-            {
+            } else if (requestCode == 2) {
 
-                Log.i("read from gallery", "yoiii gan");
+                Log.i(LOG, "yoiii gan");
                 Uri selectedImage = data.getData();
-                String[] filePath = { MediaStore.Images.Media.DATA };
+                String[] filePath = {MediaStore.Images.Media.DATA};
                 Cursor c = getContentResolver().query(selectedImage, filePath, null, null, null);
                 c.moveToFirst();
                 int columnIndex = c.getColumnIndex(filePath[0]);
@@ -133,10 +173,11 @@ public class MainActivity extends AppCompatActivity {
                 c.close();
                 Bitmap thumbnail = (BitmapFactory.decodeFile(picturePath));
 //                Log.i("path of image from ga/llery .../..", picturePath.toString());
-                iv.setImageBitmap(thumbnail);
+                //iv.setImageBitmap(thumbnail);
                 myDb.insertBitmap(thumbnail);
+
+                showListAllImage();
             }
         }
     }
-
 }

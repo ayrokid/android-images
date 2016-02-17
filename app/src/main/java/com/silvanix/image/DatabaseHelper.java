@@ -8,10 +8,11 @@ import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by ayrokid on 13/02/16.
@@ -22,6 +23,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String TABLE_NAME = "images_table";
     public static final String COL_ID = "ID";
     public static final String COL_NAME = "NAME";
+    public static final String LOG_DB = "LOG-DB-DatabaseHelper";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, 1);
@@ -73,6 +75,43 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+    // Get all images
+    public List<byte[]> getAllImage() {
+        List<byte[]> imageList = new ArrayList<>();
+//        List<Gambar> imageList = new ArrayList<Gambar>();
+        // select all query
+        String selectQuery = "SELECT * FROM "+TABLE_NAME+" ORDER BY "+COL_ID+" DESC";
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // Start the transaction
+        db.beginTransaction();
+
+        Cursor cursor = db.rawQuery(selectQuery, null);
+        // Looping
+        if(cursor.moveToFirst()) {
+            do {
+//                Gambar gambar = new Gambar();
+//                gambar.set_id(Integer.parseInt(cursor.getString(0)));
+//                gambar.set_name(cursor.getString(1));
+
+//                imageList.add(gambar);
+
+                byte[] image = cursor.getBlob(cursor.getColumnIndex(COL_NAME));
+
+                imageList.add(image);
+
+
+            } while (cursor.moveToNext());
+        }
+        db.setTransactionSuccessful();
+
+        db.endTransaction();
+        // End the Transaction
+        db.close();
+
+        return imageList;
+    }
+
     public Bitmap getBitmap(int id) throws SQLException {
         Bitmap bitmap = null;
         //Open the database for reading
@@ -94,6 +133,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             }
         }
         db.setTransactionSuccessful();
+
+        db.endTransaction();
+        // End the Transaction
+        db.close();
 
         return bitmap;
     }
