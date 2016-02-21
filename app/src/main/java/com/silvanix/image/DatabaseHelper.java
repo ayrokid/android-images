@@ -45,7 +45,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         //convert the image into byte array
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        bm.compress(Bitmap.CompressFormat.PNG, 100, out);
+        bm.compress(Bitmap.CompressFormat.PNG, 0, out);
         byte[] buffer = out.toByteArray();
 
         // open the database for writing
@@ -78,8 +78,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // Get all images
     public List<byte[]> getAllImage() {
         List<byte[]> imageList = new ArrayList<>();
-//        List<Gambar> imageList = new ArrayList<Gambar>();
-        // select all query
+
         String selectQuery = "SELECT * FROM "+TABLE_NAME+" ORDER BY "+COL_ID+" DESC";
         SQLiteDatabase db = this.getReadableDatabase();
 
@@ -88,13 +87,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         Cursor cursor = db.rawQuery(selectQuery, null);
         // Looping
-        if(cursor.moveToFirst()) {
+        if(cursor != null && cursor.moveToFirst()) {
             do {
-//                Gambar gambar = new Gambar();
-//                gambar.set_id(Integer.parseInt(cursor.getString(0)));
-//                gambar.set_name(cursor.getString(1));
 
-//                imageList.add(gambar);
+                if (cursor.isNull(0)) {
+                    cursor.moveToNext();
+                    continue;
+                }
 
                 byte[] image = cursor.getBlob(cursor.getColumnIndex(COL_NAME));
 

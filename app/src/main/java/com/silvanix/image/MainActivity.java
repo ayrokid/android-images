@@ -20,6 +20,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -46,14 +47,6 @@ public class MainActivity extends AppCompatActivity {
         b = (Button) findViewById(R.id.btnSelectPhoto);
         listView = (ListView) findViewById(R.id.listViewImage);
 
-        //iv = (ImageView) findViewById(R.id.ivImage);
-
-        /*int widht = 128;
-        int height = 128;
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(widht, height);
-
-        iv.setLayoutParams(params);*/
-
         showListAllImage();
 
         b.setOnClickListener(new View.OnClickListener() {
@@ -68,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void showListAllImage() {
         List<byte[]> allImage = myDb.getAllImage();
-        Log.i(LOG, "view bos");
+        //Log.i(LOG, "view bos");
         System.out.println(allImage.size());
 
         List<Gambar> listGambar = new ArrayList<>();
@@ -84,12 +77,6 @@ public class MainActivity extends AppCompatActivity {
 //        iv.setImageBitmap(BitmapFactory.decodeByteArray(allImage.get(1), 0, allImage.get(1).length));
 
     }
-
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu){
-//        getMenuInflater().inflate(R.menu.main, menu);
-//        return true;
-//    }
 
     private void selectImage() {
         final CharSequence[] options = {"Take Photo", "Choose from Gallery", "Cancel"};
@@ -119,8 +106,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
         if (resultCode == RESULT_OK) {
             if (requestCode == 1) {
+
                 File f = new File(Environment.getExternalStorageDirectory().toString());
                 for (File temp : f.listFiles()) {
                     if (temp.getName().equals("temp.jpg")) {
@@ -134,12 +123,7 @@ public class MainActivity extends AppCompatActivity {
                     BitmapFactory.Options bo = new BitmapFactory.Options();
 
                     bitmap = BitmapFactory.decodeFile(f.getAbsolutePath(), bo);
-
-                    //iv.setImageBitmap(bitmap);
-
-                    myDb.insertBitmap(bitmap);
-
-                    showListAllImage();
+                    Bitmap resized = Bitmap.createScaledBitmap(bitmap, 800, 480, true);
 
                     String path = Environment.getExternalStorageDirectory() + File.separator + " Phoenix" + File.separator + "default";
                     f.delete();
@@ -148,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
                     File file = new File(path, String.valueOf(System.currentTimeMillis()) + ".jpg");
                     try {
                         outFile = new FileOutputStream(file);
-                        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outFile);
+                        resized.compress(Bitmap.CompressFormat.JPEG, 85, outFile);
                         outFile.flush();
                         outFile.close();
                     } catch (FileNotFoundException e) {
@@ -158,12 +142,18 @@ public class MainActivity extends AppCompatActivity {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+
+                    myDb.insertBitmap(resized);
+
+                    System.out.println("from camera bos");
+
+                    showListAllImage();
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } else if (requestCode == 2) {
 
-                Log.i(LOG, "yoiii gan");
+            } else if (requestCode == 2) {
                 Uri selectedImage = data.getData();
                 String[] filePath = {MediaStore.Images.Media.DATA};
                 Cursor c = getContentResolver().query(selectedImage, filePath, null, null, null);
@@ -172,9 +162,14 @@ public class MainActivity extends AppCompatActivity {
                 String picturePath = c.getString(columnIndex);
                 c.close();
                 Bitmap thumbnail = (BitmapFactory.decodeFile(picturePath));
-//                Log.i("path of image from ga/llery .../..", picturePath.toString());
-                //iv.setImageBitmap(thumbnail);
-                myDb.insertBitmap(thumbnail);
+
+                Bitmap resized = Bitmap.createScaledBitmap(thumbnail, 800, 480, true);
+                ByteArrayOutputStream blob = new ByteArrayOutputStream();
+                resized.compress(Bitmap.CompressFormat.JPEG, 85, blob);
+
+                myDb.insertBitmap(resized);
+
+                System.out.println("from gallery boss");
 
                 showListAllImage();
             }
